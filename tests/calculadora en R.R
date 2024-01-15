@@ -1,10 +1,11 @@
-# preámbulo
-cc <- list(-1,-1)
-cd <- list(0,-9)
-dc <- list(-9, 0)
-dd <- list(-6,-6)
-payoff <- list(cc,cd,dc,dd)
-prisioneDilema <- array(payoff, dim = c(2,2))
+# dilema del prisionero
+prisioneDilema <- array(list(list(-1,-1),list(0,-9),list(-9,0),list(-6,-6)), dim = c(2,2))
+
+# juego de la gallina
+
+juegodeLaGallina <- array(list(list(2,2), list(3,1), list(1,3), list(0,0)), dim = c(2,2))
+
+
 
 ## Array de prueba 2
 
@@ -148,7 +149,6 @@ BuscarDominacion <- function(juego, msg = "") {
       while(IsFinish == FALSE) { # combinación de combinación de estrategias del resto de jugadores
         aIndex <- sustituter(matrix(unlist(conterActual),ncol = playersNumber, byrow = TRUE), a, x)
         bIndex <- sustituter(matrix(unlist(conterActual),ncol = playersNumber, byrow = TRUE), b, x)
-        
         if (juego[aIndex][[1]][[x]] > juego[bIndex][[1]][[x]]) { # comparador
           if (statue == "void") {
             statue <- TRUE
@@ -214,8 +214,6 @@ IndToCor <- function(index, limits) {
 
 
 
-
-
 ### Calculador de equilibros de Nash en estrategias puras
 
 BuscarEN <- function(juego, msg="") {
@@ -228,33 +226,35 @@ BuscarEN <- function(juego, msg="") {
   for (x in 1:playersNumber) { # crear conter que parta de 0 (lista [1,1,...,1])
     conter <- append(conter, 1)
   }
+  # crear el index de payoffs
+  # contar la cantidad de payoffs
   payoffsCont = 1 ## crear el index de payoffs
-  for (x in juego) {
-    payoffsCont = payoffsCont * x
+  for (x in dim(juego)) {
+    payoffsCont = payoffsCont * x # calcula la cantidad de payoffs (la multiplicación de..)
   }
-  PayoffsPoints = rep(c(0), each=payoffsCont) # crea una lista de 0, donde se van a puntear cada payoff por índice, cada posición representa el índice y el valor su puntaje
+  PayoffsPoints <- rep(c(0), each=payoffsCont) # crea una lista de 0, donde se van a puntear cada payoff por índice, cada posición representa el índice y el valor su puntaje
   
-  for (x in 1:playersNumber) { # x = jugador presente
-    IsFinishA <- FALSE
+  for (x in 1:playersNumber) { # x = jugador actual
+    IsFinish <- FALSE
     conterActual <- conter
     while(IsFinish == FALSE) { # combinación de estrategias del resto de jugadores actual
       bestRespons <- list() # bestRespons es una lista cuyo primer elemento es la lista de mejores respuestas y el segundo element el pago de esas mejores respuestas
-      IsFinishB <- FALSE
-      actualPlay <- 1
-      while (actualPlay >= Limits[[x]]) {
-        Index <- sustituter(conterActual, actualPlay, x)
-        if (length(bestRespons) == 0) {
-          bestRespons[1] <- list(CorToInd(Index, Limits))
-          bestRespons[2] <- juego[Index][[1]][[x]]
+      actualPlay <- 1 # la jugada a hacer comparar del jugador actual
+      # clasificador y comparador de resultados
+      while (actualPlay <= Limits[[x]]) {
+        Index <- sustituter(matrix(unlist(conterActual),ncol = playersNumber, byrow = TRUE), actualPlay, x)
+        if (length(bestRespons) == 0) { # el caso de que todavía no tenga mejor jugada se asigna la primer jugada
+          bestRespons[[1]] <- list(CorToInd(Index, Limits))
+          bestRespons[[2]] <- juego[Index][[1]][[x]]
           actualPlay <- actualPlay +1
           next }
-        else if (bestRespons[[2]] == juego[Index][[1]][[x]]) {
-          bestRespons[1] <- append(bestRespons[1], CorToInd(Index, Limits))
+        else if (bestRespons[[2]] == juego[Index][[1]][[x]]) { # el caso de encontrar otra jugada con pago igual al de la mejor jugada actual
+          bestRespons[[1]] <- append(bestRespons[[1]], CorToInd(Index, Limits))
           actualPlay <- actualPlay +1
           next
-        } else if (bestRespons[[2]] < juego[Index][[1]][[x]]){
-          bestRespons[1] <- list(CorToInd(Index, Limits))
-          bestRespons[2] <- juego[Index][[1]][[x]]
+        } else if (bestRespons[[2]] < juego[Index][[1]][[x]]){ # el caso de encontrar otra jugada mejor a la jugada actual
+          bestRespons[[1]] <- list(CorToInd(Index, Limits))
+          bestRespons[[2]] <- juego[Index][[1]][[x]]
           actualPlay <- actualPlay +1
           next
         } else {
@@ -262,20 +262,23 @@ BuscarEN <- function(juego, msg="") {
         }
           
       }
-      for (z in bestRespons[1]) { #posible error
+      for (z in bestRespons[[1]]) {
         PayoffsPoints[z] <- PayoffsPoints[[z]] +1
       }
       
       if (spliter(conterActual,Limits, x, 1)[[2]] == TRUE) {
         IsFinish <- TRUE
       }
-      
       conterActual <- spliter(conterActual,Limits, x, 1)[[1]]
       }
-    }
-    
   }
-  
+  PureNashEquInxes <- c()
+  for (x in 1:length(PayoffsPoints)) {
+    if (PayoffsPoints[[x]] == playersNumber) {
+      PureNashEquInxes <- append(PureNashEquInxes, x)
+    }
+  }
+  return(PureNashEquInxes)
 }
 
 
